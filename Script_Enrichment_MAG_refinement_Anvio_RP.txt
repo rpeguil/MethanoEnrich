@@ -1,0 +1,46 @@
+Author: Raphaëlle Péguilhan
+ORCID: 0000-0002-7206-0120
+Created: 01-11-2024
+Last upfate: 10-02-2026
+Licence: MIT
+Resources: This script uses a Linux environment and Miniconda 3 with any conda tool described in the text below.
+Content summary: The purpose of this cript is to check the quality of five MAGs (DTU111, DTU118, DTU20, DTU80 and DTU 142) and to refine it manually if necessary, by checking the coverage of the MAGs in all samples. This was done following the Anvi'o tutorial: https://merenlab.org/2015/05/11/anvi-refine/
+
+conda activate anvio-8
+cd /workDir
+
+# We need the trimmed reads that were used to construct the MAGs. The raw data are coming from the study of Giangeri et al. (2025) Chemical Engineering Journal, NCBI BioProject PRJNA1063026. The raw data were processed until trimming as described in the script "Script_Enrichment_MG_proccessing_RP.txt".
+
+mkdir trimData
+cp /home/trimmed_data/*.gz ./trimData/
+
+## create a samples.txt file with the path to the samples:
+ls ./trimData > samples.txt
+# edit the sample.txt file to have three colums "sample", "r1", "r2" delimited by tab, with the full path to the files 1 and r2.
+
+## create a fasta.txt file with the name and path of the MAGs of interest (tab delimited).
+name	path
+DTU20	/path
+
+# create a default config file for the "metagenomics" workflow of anvi'o.
+anvi-run-workflow -w metagenomics --get-default-config config.json
+# I edit the text file to replace the number of threads to 20 for each command. L.288 change reference_mode to true.
+
+# generate a schema of the workflow
+anvi-run-workflow -w metagenomics -c config.json --save-workflow-graph
+
+## Run the workflow
+anvi-run-workflow -w metagenomics -c config.json
+
+## Visualize the results
+anvi-interactive -c 02_CONTIGS/DTU20-contigs.db -p 05_MERGED/DTU20/PROFILE.db
+
+# I select manually all the contigs and create a bin named "DTU20". I save the bin in the collection "default".
+# I then visualize the DTU20 bin using:
+anvi-refine -p 05_MERGED/DTU20/PROFILE.db -c 02_CONTIGS/DTU20-contigs.db -C default -b DTU20
+# In this new window I unselect the contaminations to create the bin "DTU20_refined" and click on "store refined bins in the database". The bin DTU20 will disappear and be replace by DTU20_refined. 
+# I use anvi-summarize to see the new stats of the refined MAGs.
+anvi-summarize -p 05_MERGED/DTU20/PROFILE.db -c 02_CONTIGS/DTU20-contigs.db -C default -o DTU20_REFINED_SUMMARY
+
+## Do the same for all other 4 MAGS
+
